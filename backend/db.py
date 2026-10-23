@@ -38,6 +38,16 @@ def fetch_one(sql, params=()):
         return cursor.fetchone()
 
 
+def execute(sql, params=()):
+    """Выполняет UPDATE или DELETE, сохраняет изменения и возвращает число затронутых строк."""
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute(sql, params)
+        count = cursor.rowcount
+    db.commit()
+    return count
+
+
 def insert(sql, params=()):
     """Выполняет INSERT ... RETURNING, сохраняет изменения и возвращает новую строку."""
     db = get_db()

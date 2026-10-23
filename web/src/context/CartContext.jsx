@@ -1,44 +1,44 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { api } from '../api/index.js'
+import { useAuth } from './AuthContext.jsx'
 
-// Корзина хранится локально на устройстве (ТЗ, п. 5.1), сервер для неё не нужен.
+// Корзина хранится на сервере у пользователя, поэтому она общая для веба и мобилки.
+// Каждый запрос возвращает всю корзину целиком — её и кладём в состояние.
 
-const CART_KEY = 'aura_cart'
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => JSON.parse(localStorage.getItem(CART_KEY) || '[]'))
+  const { user } = useAuth()
+  const [items, setItems] = useState([])
 
+  // Загружаем корзину при входе и очищаем список на экране при выходе
   useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(items))
-  }, [items])
+    if (!user) {
+      setItems([])
+      return
+    }
+    api.getCart().then(setItems).catch((err) => alert(err.message))
+  }, [user])
+
+  const update = (request) =>
+    request.then(setItems).catch((err) => alert(err.message))
 
   // Один и тот же товар в разных размерах/цветах — разные позиции корзины
-  const addItem = (product, { size = null, color = null, quantity = 1 } = {}) => {
-    const key = `${product.id}|${size ?? ''}|${color ?? ''}`
-    setItems((prev) => {
-      if (prev.some((item) => item.key === key)) {
-        return prev.map((item) =>
-          item.key === key ? { ...item, quantity: item.quantity + quantity } : item,
-        )
-      }
-      const { id, name, category, price, images } = product
-      return [...prev, { key, productId: id, name, category, price, image: images[0], size, color, quantity }]
-    })
-  }
+  const addItem = (product, { size = null, color = null, quantity = 1 } = {}) =>
+    update(api.addToCart({ productId: product.id, size, color, quantity }))
 
-  const setQuantity = (key, quantity) => {
+  const setQuantity = (id, quantity) => {
     if (quantity < 1) return
-    setItems((prev) => prev.map((item) => (item.key === key ? { ...item, quantity } : item)))
+    return update(api.updateCartItem(id, quantity))
   }
 
-  const removeItem = (key) => setItems((prev) => prev.filter((item) => item.key !== key))
-  const clear = () => setItems([])
+  const removeItem = (id) => update(api.removeCartItem(id))
 
   const count = items.reduce((sum, item) => sum + item.quantity, 0)
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ items, count, total, addItem, setQuantity, removeItem, clear }}>
+    <CartContext.Provider value={{ items, count, total, addItem, setQuantity, removeItem }}>
       {children}
     </CartContext.Provider>
   )

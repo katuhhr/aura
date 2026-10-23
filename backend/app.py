@@ -5,6 +5,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 import auth
+import cart
 import db
 import products
 
@@ -17,6 +18,7 @@ CORS(app)
 app.teardown_appcontext(db.close_db)
 app.register_blueprint(auth.bp)
 app.register_blueprint(products.bp)
+app.register_blueprint(cart.bp)
 
 
 @app.get("/api/health")

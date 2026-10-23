@@ -1,6 +1,6 @@
 # Бэкенд AURA
 
-Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей и товары, Redis — токены входа.
+Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей, товары и корзины, Redis — токены входа.
 
 ## Файлы
 
@@ -9,6 +9,7 @@ Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей �
 | `app.py` | Точка входа: создаёт приложение и подключает маршруты |
 | `auth.py` | Регистрация, вход, выход, проверка токена (`login_required`) |
 | `products.py` | Каталог: список с фильтром и поиском, один товар |
+| `cart.py` | Корзина пользователя: показать, добавить, изменить количество, удалить |
 | `db.py` | Подключение к PostgreSQL и Redis, функции для запросов |
 | `config.py` | Настройки из `.env` |
 | `schema.sql` | Создание таблиц |
@@ -67,7 +68,13 @@ Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей �
 | POST | `/auth/logout` | — | `{ message }` |
 | GET | `/products?category=&search=` | — | список товаров |
 | GET | `/products/<id>` | — | товар |
+| GET | `/cart` | — | корзина |
+| POST | `/cart` | `{ productId, size, color, quantity }` | корзина |
+| PATCH | `/cart/<id>` | `{ quantity }` | корзина |
+| DELETE | `/cart/<id>` | — | корзина |
 | GET | `/health` | — | `{ status: "ok" }` |
 
 Кроме `register`, `login` и `health`, все запросы требуют заголовок
 `Authorization: Bearer <token>`.
+
+Все запросы к корзине возвращают её целиком: `[{ id, productId, name, category, price, image, size, color, quantity }]`.

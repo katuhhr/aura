@@ -9,10 +9,15 @@
 //   POST /auth/logout                               -> { message }
 //   GET  /products?category=&search=                -> Product[]
 //   GET  /products/:id                              -> Product
+//   GET    /cart                                    -> CartItem[]
+//   POST   /cart      { productId, size, color, quantity } -> CartItem[]
+//   PATCH  /cart/:id  { quantity }                  -> CartItem[]
+//   DELETE /cart/:id                                -> CartItem[]
 //
-//   user    = { id, name, email }
-//   Product = { id, name, category, price, description, sizes: string[],
-//               colors: { name, hex }[], images: string[] }
+//   user     = { id, name, email }
+//   Product  = { id, name, category, price, description, sizes: string[],
+//                colors: { name, hex }[], images: string[] }
+//   CartItem = { id, productId, name, category, price, image, size, color, quantity }
 
 import { API_URL, request } from './client.js'
 import { mockApi } from './mock.js'
@@ -31,6 +36,11 @@ const httpApi = {
     return request('/products' + (query ? `?${query}` : ''))
   },
   getProduct: (id) => request(`/products/${id}`),
+
+  getCart: () => request('/cart'),
+  addToCart: (data) => request('/cart', { method: 'POST', body: data }),
+  updateCartItem: (id, quantity) => request(`/cart/${id}`, { method: 'PATCH', body: { quantity } }),
+  removeCartItem: (id) => request(`/cart/${id}`, { method: 'DELETE' }),
 }
 
 export const api = API_URL ? httpApi : mockApi

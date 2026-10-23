@@ -13,11 +13,17 @@ export async function request(path, { method = 'GET', body } = {}) {
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const response = await fetch(API_URL + path, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  let response
+  try {
+    response = await fetch(API_URL + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  } catch {
+    // fetch падает, если сервер выключен или недоступен по сети
+    throw new Error('Сервер недоступен. Проверьте, что бэкенд запущен')
+  }
 
   const data = await response.json().catch(() => null)
   if (!response.ok) {

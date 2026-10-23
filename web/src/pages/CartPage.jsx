@@ -24,7 +24,7 @@ export default function CartPage() {
       <div className="cart">
         <ul className="cart__list">
           {items.map((item) => (
-            <li key={item.key} className="cart-item">
+            <li key={item.id} className="cart-item">
               <Link to={`/product/${item.productId}`} className="cart-item__image">
                 <ProductImage src={item.image} category={item.category} alt={item.name} />
               </Link>
@@ -35,10 +35,10 @@ export default function CartPage() {
                 </span>
                 <div className="cart-item__row">
                   <span className="cart-item__price">{formatPrice(item.price * item.quantity)}</span>
-                  <QuantityStepper value={item.quantity} onChange={(value) => setQuantity(item.key, value)} />
+                  <QuantityStepper value={item.quantity} onChange={(value) => setQuantity(item.id, value)} />
                 </div>
               </div>
-              <button className="cart-item__remove" onClick={() => removeItem(item.key)} aria-label="Удалить из корзины">
+              <button className="cart-item__remove" onClick={() => removeItem(item.id)} aria-label="Удалить из корзины">
                 ×
               </button>
             </li>
