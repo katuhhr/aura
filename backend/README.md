@@ -12,9 +12,6 @@ Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей, 
 | `cart.py` | Корзина пользователя: показать, добавить, изменить количество, удалить |
 | `db.py` | Подключение к PostgreSQL и Redis, функции для запросов |
 | `config.py` | Настройки из `.env` |
-| `schema.sql` | Создание таблиц |
-| `seed.sql` | Тестовые товары |
-| `init_db.py` | Создаёт таблицы, заполняет каталог, добавляет демо-аккаунт |
 | `docker-compose.yml` | Redis в Docker |
 
 ## Запуск
@@ -39,13 +36,17 @@ Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей, 
    python -m venv .venv
    .venv\Scripts\activate
    pip install -r requirements.txt
+   copy .env.example .env
    ```
 
-3. Создать таблицы и тестовые данные (повторный запуск удаляет все данные):
+3. Таблицы и данные ведутся вручную в PostgreSQL (например, через pgAdmin).
+   Серверу нужны три таблицы:
 
-   ```
-   python init_db.py
-   ```
+   | Таблица | Столбцы |
+   |---|---|
+   | `users` | `id`, `name`, `email` (уникальный), `password_hash`, `created_at` |
+   | `products` | `id`, `name`, `category`, `price`, `description`, `sizes` (TEXT[]), `colors` (JSONB), `images` (TEXT[]) |
+   | `cart_items` | `id`, `user_id` → users, `product_id` → products, `size`, `color`, `quantity`; уникальная пара `(user_id, product_id, size, color)` |
 
 4. Запустить сервер — он будет доступен на http://localhost:5000:
 
