@@ -2,8 +2,6 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../api/index.js'
 import { useAuth } from './AuthContext.jsx'
 
-// Корзина хранится на сервере у пользователя, поэтому она общая для веба и мобилки.
-// Каждый запрос возвращает всю корзину целиком — её и кладём в состояние.
 
 const CartContext = createContext(null)
 

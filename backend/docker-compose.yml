@@ -1,5 +1,4 @@
 # Поднимает Redis для разработки: docker compose up -d
-# PostgreSQL здесь нет — он установлен в системе и работает как служба Windows.
 services:
   redis:
     image: redis:7

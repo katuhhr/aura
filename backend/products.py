@@ -1,4 +1,3 @@
-# Каталог товаров: список с фильтрами и один товар.
 
 from flask import Blueprint, jsonify, request
 
@@ -13,7 +12,6 @@ FIELDS = "id, name, category, price, description, sizes, colors, images"
 @bp.get("")
 @login_required
 def list_products():
-    # Пример запроса: /api/products?category=Women&search=платье
     category = request.args.get("category", "").strip()
     search = request.args.get("search", "").strip()
 
@@ -23,7 +21,6 @@ def list_products():
         sql += " AND category = %s"
         params.append(category)
     if search:
-        # ILIKE — поиск без учёта регистра, % — любые символы до и после
         sql += " AND name ILIKE %s"
         params.append(f"%{search}%")
     sql += " ORDER BY id"

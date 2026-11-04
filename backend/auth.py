@@ -61,7 +61,7 @@ def register():
         "RETURNING id, name, email",
         (name, email, generate_password_hash(password)),
     )
-    return jsonify(token=create_token(user["id"]), user=user), 201
+    return jsonify(token=create_token(user["id"]), user=user), 201 
 
 
 @bp.post("/login")

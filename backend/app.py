@@ -1,6 +1,3 @@
-# Точка входа: создаёт Flask-приложение и подключает все маршруты.
-# Запуск: python app.py
-
 from flask import Flask, jsonify
 from flask_cors import CORS
 
@@ -38,4 +35,4 @@ def server_error(error):
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
