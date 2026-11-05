@@ -12,8 +12,9 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null)
   const [error, setError] = useState('')
   const [imageIndex, setImageIndex] = useState(0)
-  const [size, setSize] = useState(null)
-  const [color, setColor] = useState(null)
+  
+  // Состояния для выбранного варианта, количества и статуса добавления
+  const [selectedVariantId, setSelectedVariantId] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
 
@@ -25,9 +26,12 @@ export default function ProductPage() {
       .then((data) => {
         setProduct(data)
         setImageIndex(0)
-        setSize(data.sizes[0] ?? null)
-        setColor(data.colors[0]?.name ?? null)
         setQuantity(1)
+        
+        // По умолчанию выбираем первый вариант из массива variants
+        if (data.variants && data.variants.length > 0) {
+          setSelectedVariantId(data.variants[0].id)
+        }
       })
       .catch((err) => setError(err.message))
   }, [id])
@@ -35,8 +39,20 @@ export default function ProductPage() {
   if (error) return <p className="state error">{error}</p>
   if (!product) return <p className="state">Загрузка…</p>
 
+  // Уникальные списки размеров и цветов из вариантов
+  const sizes = [...new Set(product.variants?.map((v) => v.size).filter(Boolean))]
+  const colors = [...new Set(product.variants?.map((v) => v.color).filter(Boolean))]
+  
+  // Текущий выбранный вариант
+  const currentVariant = product.variants?.find((v) => v.id === selectedVariantId) || product.variants?.[0]
+
   const handleAdd = () => {
-    addItem(product, { size, color, quantity })
+    if (!currentVariant) return
+
+    addItem(product, {
+      variantId: currentVariant.id,
+      quantity,
+    })
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
@@ -67,37 +83,58 @@ export default function ProductPage() {
           <h1>{product.name}</h1>
           <p className="product__price">{formatPrice(product.price)}</p>
 
-          {product.sizes.length > 0 && (
+          {/* Выбор размера */}
+          {sizes.length > 0 && (
             <div className="option">
               <span className="option__label">Размер</span>
               <div className="option__values">
-                {product.sizes.map((value) => (
-                  <button
-                    key={value}
-                    className={`chip ${size === value ? 'chip--active' : ''}`}
-                    onClick={() => setSize(value)}
-                  >
-                    {value}
-                  </button>
-                ))}
+                {sizes.map((sizeValue) => {
+                  const isSelected = currentVariant?.size === sizeValue
+                  return (
+                    <button
+                      key={sizeValue}
+                      className={`chip ${isSelected ? 'chip--active' : ''}`}
+                      onClick={() => {
+                        // Находим вариант, соответствующий выбранному размеру и текущему цвету
+                        const found = product.variants.find(
+                          (v) => v.size === sizeValue && (!currentVariant?.color || v.color === currentVariant.color)
+                        ) || product.variants.find((v) => v.size === sizeValue)
+                        
+                        if (found) setSelectedVariantId(found.id)
+                      }}
+                    >
+                      {sizeValue}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
 
-          {product.colors.length > 0 && (
+          {/* Выбор цвета */}
+          {colors.length > 0 && (
             <div className="option">
-              <span className="option__label">Цвет: {color}</span>
+              <span className="option__label">Цвет: {currentVariant?.color}</span>
               <div className="option__values">
-                {product.colors.map((value) => (
-                  <button
-                    key={value.name}
-                    className={`swatch ${color === value.name ? 'swatch--active' : ''}`}
-                    style={{ background: value.hex }}
-                    onClick={() => setColor(value.name)}
-                    aria-label={value.name}
-                    title={value.name}
-                  />
-                ))}
+                {colors.map((colorValue) => {
+                  const isSelected = currentVariant?.color === colorValue
+                  return (
+                    <button
+                      key={colorValue}
+                      className={`chip ${isSelected ? 'chip--active' : ''}`}
+                      onClick={() => {
+                        // Находим вариант, соответствующий выбранному цвету и текущему размеру
+                        const found = product.variants.find(
+                          (v) => v.color === colorValue && (!currentVariant?.size || v.size === currentVariant.size)
+                        ) || product.variants.find((v) => v.color === colorValue)
+                        
+                        if (found) setSelectedVariantId(found.id)
+                      }}
+                    >
+                      {colorValue}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -115,3 +152,4 @@ export default function ProductPage() {
     </>
   )
 }
+console.log('Выбранный вариант:', currentVariant)

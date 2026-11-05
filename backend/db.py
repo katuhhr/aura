@@ -7,14 +7,12 @@ from psycopg2.extras import RealDictCursor
 
 import config
 
-# Redis хранит токены входа: ключ "token:<токен>" -> id пользователя
 redis_client = redis.Redis.from_url(config.REDIS_URL, decode_responses=True)
 
 
 def get_db():
     """Одно подключение к базе на один запрос."""
     if "db" not in g:
-        # RealDictCursor возвращает строки как словари: {"id": 1, "name": ...}
         g.db = psycopg2.connect(config.DATABASE_URL, cursor_factory=RealDictCursor)
     return g.db
 
