@@ -1,7 +1,3 @@
-// Заглушка сервера: те же методы, что и у httpApi, но данные лежат в браузере.
-// Пользователи хранятся в localStorage в открытом виде — это только для разработки.
-
-import { products } from '../data/products.js'
 import { demoUser } from '../data/demoUser.js'
 import { getToken } from './client.js'
 

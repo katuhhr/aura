@@ -1,22 +1,20 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/index.js'
-import { CATEGORIES } from '../data/products.js'
 import ProductCard from '../components/ProductCard.jsx'
 
 export default function CatalogPage() {
   const [category, setCategory] = useState(null)
+  const CATEGORIES = ['Women', 'Men', 'Footwear', 'Accessories'];
   const [search, setSearch] = useState('')
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Флаг нужен, чтобы ответ на устаревший запрос не затёр свежий результат
     let cancelled = false
     setLoading(true)
     setError('')
 
-    // Небольшая задержка, чтобы не слать запрос на каждую набранную букву
     const timer = setTimeout(() => {
       api
         .getProducts({ category, search })
