@@ -1,5 +1,16 @@
 // Фото товара. Пока у товара нет картинки, показываем заглушку с силуэтом категории.
 
+import { API_URL } from '../api/client.js'
+
+export function resolveImageUrl(src) {
+  if (!API_URL || !/^http:\/\/(?:localhost|127\.0\.0\.1):9000\/aura-images\//.test(src)) {
+    return src
+  }
+  const image = new URL(src)
+  image.hostname = new URL(API_URL, window.location.origin).hostname
+  return image.href
+}
+
 const ICONS = {
   Women: 'M24 8l4 6h8l4-6M24 8l-2 14 4 6-10 28h32L38 28l4-6-2-14',
   Men: 'M22 10L8 18l6 10 6-3v29h24V25l6 3 6-10-14-8c-2 4-6 6-10 6s-8-2-10-6z',
@@ -8,7 +19,7 @@ const ICONS = {
 }
 
 export default function ProductImage({ src, category, alt = '' }) {
-  if (src) return <img className="product-image" src={src} alt={alt} />
+  if (src) return <img className="product-image" src={resolveImageUrl(src)} alt={alt} />
 
   return (
     <div className="product-image product-image--empty" role="img" aria-label={alt}>

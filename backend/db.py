@@ -15,7 +15,8 @@ def get_db():
     """Одно подключение к базе на один запрос."""
     if "db" not in g:
         # RealDictCursor возвращает строки как словари: {"id": 1, "name": ...}
-        g.db = psycopg2.connect(config.DATABASE_URL, cursor_factory=RealDictCursor)
+        options = {"host": config.DATABASE_HOST} if config.DATABASE_HOST else {}
+        g.db = psycopg2.connect(config.DATABASE_URL, cursor_factory=RealDictCursor, **options)
     return g.db
 
 

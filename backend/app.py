@@ -3,9 +3,9 @@ from flask_cors import CORS
 
 import auth
 import cart
+import config
 import db
 import products
-import os
 import uuid
 from minio import Minio
 
@@ -23,12 +23,12 @@ app.register_blueprint(cart.bp)
 # --- НАСТРОЙКА MINIO ---
 # (Убедись, что логин и пароль совпадают с теми, что ты задал в Docker)
 minio_client = Minio(
-    "localhost:9000",
-    access_key="minioadmin",
-    secret_key="minioadmin",
+    config.MINIO_ENDPOINT,
+    access_key=config.MINIO_ACCESS_KEY,
+    secret_key=config.MINIO_SECRET_KEY,
     secure=False
 )
-BUCKET_NAME = "aura-images"
+BUCKET_NAME = config.MINIO_BUCKET
 
 @app.get("/api/health")
 def health():
@@ -80,9 +80,6 @@ def server_error(error):
 @app.get("/api/check")
 def check():
     return jsonify(message="Я вижу этот код!")
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

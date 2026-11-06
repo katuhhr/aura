@@ -1,6 +1,6 @@
-// Базовый HTTP-клиент. Все запросы к будущему бэкенду идут через request().
+// Базовый HTTP-клиент. Все запросы к Flask API идут через request().
 
-export const API_URL = import.meta.env.VITE_API_URL
+export const API_URL = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '')
 
 const TOKEN_KEY = 'aura_token'
 
@@ -9,6 +9,8 @@ export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
 
 export async function request(path, { method = 'GET', body } = {}) {
+  if (!API_URL) throw new Error('Адрес сервера не настроен. Укажите VITE_API_URL перед сборкой')
+
   const headers = { 'Content-Type': 'application/json' }
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`

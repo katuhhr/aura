@@ -1,10 +1,7 @@
-# Корзина пользователя. Каждый запрос в ответ возвращает всю корзину целиком,
-# чтобы фронтенду было проще: он просто заменяет свой список на полученный.
-
 from flask import Blueprint, g, jsonify, request
 
 from auth import login_required
-from db import execute, fetch_all, fetch_one
+from db import execute, fetch_all, get_db
 
 bp = Blueprint("cart", __name__, url_prefix="/api/cart")
 
@@ -14,16 +11,18 @@ def get_cart():
     return fetch_all(
         """
         SELECT c.id,
-               c.product_id         AS "productId",
+               v.product_id AS "productId",
+               c.variant_id AS "variantId",
                p.name,
                p.category,
                p.price,
-               p.images[1]          AS image,  -- первое фото товара (в SQL массивы с 1)
-               NULLIF(c.size, '')   AS size,   -- пустую строку отдаём как null
-               NULLIF(c.color, '')  AS color,
+               COALESCE(to_jsonb(p) -> 'color_images' ->> v.color, p.images[1]) AS image,
+               v.size,
+               v.color,
                c.quantity
         FROM cart_items c
-        JOIN products p ON p.id = c.product_id
+        JOIN product_variants v ON v.id = c.variant_id
+        JOIN products p ON p.id = v.product_id
         WHERE c.user_id = %s
         ORDER BY c.id
         """,
@@ -33,8 +32,8 @@ def get_cart():
 
 def read_quantity(data, default=None):
     """Достаёт количество из запроса. Возвращает None, если оно неправильное."""
-    quantity = data.get("quantity", default)
-    if type(quantity) is not int or quantity < 1:
+    quantity = data.get("quantity", default) if isinstance(data, dict) else None
+    if type(quantity) is not int or not 1 <= quantity <= 2147483647:
         return None
     return quantity
 
@@ -48,28 +47,40 @@ def show_cart():
 @bp.post("")
 @login_required
 def add_to_cart():
-    # Тело запроса: { "productId": 7, "size": "38", "color": "Чёрный", "quantity": 1 }
-    data = request.get_json(silent=True) or {}
-    product_id = data.get("productId")
-    size = data.get("size") or ""
-    color = data.get("color") or ""
-    quantity = read_quantity(data, default=1)
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(message="Ожидается JSON-объект"), 400
 
+    variant_id = data.get("variantId")
+    quantity = read_quantity(data, default=1)
     if quantity is None:
         return jsonify(message="Количество должно быть целым числом больше нуля"), 400
-    if not isinstance(product_id, int) or not fetch_one("SELECT id FROM products WHERE id = %s", (product_id,)):
-        return jsonify(message="Товар не найден"), 404
+    if type(variant_id) is not int or not 1 <= variant_id <= 2147483647:
+        return jsonify(message="Укажите вариант товара"), 400
 
-    # Если такая позиция уже есть — увеличиваем количество, иначе добавляем новую строку
-    execute(
-        """
-        INSERT INTO cart_items (user_id, product_id, size, color, quantity)
-        VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT (user_id, product_id, size, color)
-        DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
-        """,
-        (g.user_id, product_id, size, color, quantity),
-    )
+    db = get_db()
+    with db, db.cursor() as cursor:
+        # Сериализуем добавления в корзину пользователя без требования к уникальному индексу.
+        cursor.execute("SELECT id FROM users WHERE id = %s FOR NO KEY UPDATE", (g.user_id,))
+        cursor.execute("SELECT id FROM product_variants WHERE id = %s FOR KEY SHARE", (variant_id,))
+        if cursor.fetchone() is None:
+            return jsonify(message="Вариант товара не найден"), 404
+
+        cursor.execute(
+            """
+            UPDATE cart_items SET quantity = quantity + %s
+            WHERE id = (
+                SELECT id FROM cart_items WHERE user_id = %s AND variant_id = %s
+                ORDER BY id LIMIT 1
+            )
+            """,
+            (quantity, g.user_id, variant_id),
+        )
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "INSERT INTO cart_items (user_id, variant_id, quantity) VALUES (%s, %s, %s)",
+                (g.user_id, variant_id, quantity),
+            )
     return jsonify(get_cart()), 201
 
 

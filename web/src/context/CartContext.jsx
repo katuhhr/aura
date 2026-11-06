@@ -19,11 +19,17 @@ export function CartProvider({ children }) {
   }, [user])
 
   const update = (request) =>
-    request.then(setItems).catch((err) => alert(err.message))
+    request.then((cart) => {
+      setItems(cart)
+      return true
+    }).catch((err) => {
+      alert(err.message)
+      return false
+    })
 
   // Один и тот же товар в разных размерах/цветах — разные позиции корзины
-  const addItem = (product, { size = null, color = null, quantity = 1 } = {}) =>
-    update(api.addToCart({ productId: product.id, size, color, quantity }))
+  const addItem = (variantId, quantity = 1) =>
+    update(api.addToCart({ variantId, quantity }))
 
   const setQuantity = (id, quantity) => {
     if (quantity < 1) return

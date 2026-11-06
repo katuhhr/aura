@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/index.js'
-import { CATEGORIES } from '../data/products.js'
 import ProductCard from '../components/ProductCard.jsx'
+
+const CATEGORIES = ['Women', 'Men', 'Footwear', 'Accessories']
 
 export default function CatalogPage() {
   const [category, setCategory] = useState(null)

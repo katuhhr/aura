@@ -6,12 +6,8 @@ import ProductImage from './ProductImage.jsx'
 export default function ProductCard({ product }) {
   const { addItem } = useCart()
 
-  // С карточки товар добавляется с первым размером и цветом, количество — 1
-  const handleAdd = () =>
-    addItem(product, {
-      size: product.sizes[0] ?? null,
-      color: product.colors[0]?.name ?? null,
-    })
+  const variant = product.variants[0]
+  const handleAdd = () => addItem(variant.id)
 
   return (
     <article className="card">
@@ -21,7 +17,7 @@ export default function ProductCard({ product }) {
         <h3 className="card__name">{product.name}</h3>
         <span className="card__price">{formatPrice(product.price)}</span>
       </Link>
-      <button className="btn btn--primary btn--block" onClick={handleAdd}>
+      <button className="btn btn--primary btn--block" onClick={handleAdd} disabled={!variant}>
         Добавить в корзину
       </button>
     </article>

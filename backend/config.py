@@ -6,9 +6,10 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://aura:aura@localhost:5432/aura")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-MINIO_ENDPOINT = "localhost:9000"
-MINIO_ACCESS_KEY = "minioadmin"  # (или тот логин, что ты задал в -e MINIO_ROOT_USER)
-MINIO_SECRET_KEY = "minioadmin"  # (или тот пароль, что ты задал в -e MINIO_ROOT_PASSWORD)
+DATABASE_HOST = os.getenv("DATABASE_HOST")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET = "aura-images"
 
 # Сколько живёт токен входа: 7 дней в секундах

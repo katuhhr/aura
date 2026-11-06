@@ -1,6 +1,5 @@
 // Единая точка доступа к данным. Страницы импортируют только { api } отсюда.
 //
-// Если задан VITE_API_URL — запросы уходят на сервер, иначе работают моки.
 // Контракт, которого ждёт фронт от бэкенда:
 //
 //   POST /auth/register  { name, email, password }  -> { token, user }
@@ -10,19 +9,18 @@
 //   GET  /products?category=&search=                -> Product[]
 //   GET  /products/:id                              -> Product
 //   GET    /cart                                    -> CartItem[]
-//   POST   /cart      { productId, size, color, quantity } -> CartItem[]
+//   POST   /cart      { variantId, quantity } -> CartItem[]
 //   PATCH  /cart/:id  { quantity }                  -> CartItem[]
 //   DELETE /cart/:id                                -> CartItem[]
 //
 //   user     = { id, name, email }
-//   Product  = { id, name, category, price, description, sizes: string[],
-//                colors: { name, hex }[], images: string[] }
-//   CartItem = { id, productId, name, category, price, image, size, color, quantity }
+//   Product  = { id, name, category, price, description, 
+//                variants: { id, size, color }[], images: string[], colorImages?: Record<string, string> }
+//   CartItem = { id, productId, variantId, name, category, price, image, size, color, quantity }
 
-import { API_URL, request } from './client.js'
-import { mockApi } from './mock.js'
+import { request } from './client.js'
 
-const httpApi = {
+export const api = {
   register: (data) => request('/auth/register', { method: 'POST', body: data }),
   login: (data) => request('/auth/login', { method: 'POST', body: data }),
   me: () => request('/auth/me'),
@@ -42,5 +40,3 @@ const httpApi = {
   updateCartItem: (id, quantity) => request(`/cart/${id}`, { method: 'PATCH', body: { quantity } }),
   removeCartItem: (id) => request(`/cart/${id}`, { method: 'DELETE' }),
 }
-
-export const api = API_URL ? httpApi : mockApi
