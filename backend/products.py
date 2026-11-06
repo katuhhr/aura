@@ -1,10 +1,19 @@
+
 from flask import Blueprint, jsonify, request
+
 from auth import login_required
 from db import fetch_all, fetch_one
 
 bp = Blueprint("products", __name__, url_prefix="/api/products")
 
-FIELDS = "id, name, category, price, description, sizes, colors, images"
+FIELDS = """
+    id, name, category, price, description, COALESCE(images, '{}') AS images, COALESCE(to_jsonb(products) -> 'color_images', '{}'::jsonb) AS "colorImages",
+    COALESCE((
+        SELECT json_agg(json_build_object('id', v.id, 'size', v.size, 'color', v.color) ORDER BY v.id)
+        FROM product_variants v WHERE v.product_id = products.id
+    ), '[]'::json) AS variants
+"""
+
 
 @bp.get("")
 @login_required
@@ -23,6 +32,7 @@ def list_products():
     sql += " ORDER BY id"
 
     return jsonify(fetch_all(sql, params))
+
 
 @bp.get("/<int:product_id>")
 @login_required

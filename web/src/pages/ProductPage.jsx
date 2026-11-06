@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/index.js'
 import { useCart } from '../context/CartContext.jsx'
+import { getColorSwatch } from '../utils/color.js'
 import { formatPrice } from '../utils/format.js'
-import ProductImage from '../components/ProductImage.jsx'
+import ProductImage, { resolveImageUrl } from '../components/ProductImage.jsx'
 import QuantityStepper from '../components/QuantityStepper.jsx'
 
 export default function ProductPage() {
@@ -11,10 +12,8 @@ export default function ProductPage() {
   const { addItem } = useCart()
   const [product, setProduct] = useState(null)
   const [error, setError] = useState('')
-  const [imageIndex, setImageIndex] = useState(0)
-  
-  // Состояния для выбранного варианта, количества и статуса добавления
-  const [selectedVariantId, setSelectedVariantId] = useState(null)
+  const [imageIndex, setImageIndex] = useState(null)
+  const [variantId, setVariantId] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
 
@@ -25,13 +24,10 @@ export default function ProductPage() {
       .getProduct(id)
       .then((data) => {
         setProduct(data)
-        setImageIndex(0)
+        setImageIndex(null)
+        setVariantId(data.variants[0]?.id ?? null)
+        setAdded(false)
         setQuantity(1)
-        
-        // По умолчанию выбираем первый вариант из массива variants
-        if (data.variants && data.variants.length > 0) {
-          setSelectedVariantId(data.variants[0].id)
-        }
       })
       .catch((err) => setError(err.message))
   }, [id])
@@ -39,20 +35,19 @@ export default function ProductPage() {
   if (error) return <p className="state error">{error}</p>
   if (!product) return <p className="state">Загрузка…</p>
 
-  // Уникальные списки размеров и цветов из вариантов
-  const sizes = [...new Set(product.variants?.map((v) => v.size).filter(Boolean))]
-  const colors = [...new Set(product.variants?.map((v) => v.color).filter(Boolean))]
-  
-  // Текущий выбранный вариант
-  const currentVariant = product.variants?.find((v) => v.id === selectedVariantId) || product.variants?.[0]
+  const variant = product.variants.find((value) => value.id === variantId)
+  const colorImage = product.colorImages?.[variant?.color]
+  const activeImage = imageIndex === null ? colorImage ?? product.images[0] : product.images[imageIndex]
+  const sizes = [...new Set(product.variants.map((value) => value.size))]
+  const variantsForSize = product.variants.filter((value) => value.size === variant?.size)
+  const selectSize = (size) => {
+    const matching = product.variants.filter((value) => value.size === size)
+    setImageIndex(null)
+    setVariantId((matching.find((value) => value.color === variant?.color) ?? matching[0]).id)
+  }
 
-  const handleAdd = () => {
-    if (!currentVariant) return
-
-    addItem(product, {
-      variantId: currentVariant.id,
-      quantity,
-    })
+  const handleAdd = async () => {
+    if (!variant || !(await addItem(variant.id, quantity))) return
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
@@ -62,16 +57,16 @@ export default function ProductPage() {
       <Link to="/" className="back">← Каталог</Link>
       <div className="product">
         <div className="product__gallery">
-          <ProductImage src={product.images[imageIndex]} category={product.category} alt={product.name} />
+          <ProductImage src={activeImage} category={product.category} alt={product.name} />
           {product.images.length > 1 && (
             <div className="product__thumbs">
               {product.images.map((src, index) => (
                 <button
                   key={src}
-                  className={index === imageIndex ? 'active' : ''}
+                  className={src === activeImage ? 'active' : ''}
                   onClick={() => setImageIndex(index)}
                 >
-                  <img src={src} alt="" />
+                  <img src={resolveImageUrl(src)} alt="" />
                 </button>
               ))}
             </div>
@@ -83,69 +78,54 @@ export default function ProductPage() {
           <h1>{product.name}</h1>
           <p className="product__price">{formatPrice(product.price)}</p>
 
-          {/* Выбор размера */}
-          {sizes.length > 0 && (
+          {sizes.some(Boolean) && (
             <div className="option">
               <span className="option__label">Размер</span>
               <div className="option__values">
-                {sizes.map((sizeValue) => {
-                  const isSelected = currentVariant?.size === sizeValue
-                  return (
-                    <button
-                      key={sizeValue}
-                      className={`chip ${isSelected ? 'chip--active' : ''}`}
-                      onClick={() => {
-                        // Находим вариант, соответствующий выбранному размеру и текущему цвету
-                        const found = product.variants.find(
-                          (v) => v.size === sizeValue && (!currentVariant?.color || v.color === currentVariant.color)
-                        ) || product.variants.find((v) => v.size === sizeValue)
-                        
-                        if (found) setSelectedVariantId(found.id)
-                      }}
-                    >
-                      {sizeValue}
-                    </button>
-                  )
-                })}
+                {sizes.map((value) => (
+                  <button
+                    key={value ?? ''}
+                    className={`chip ${variant?.size === value ? 'chip--active' : ''}`}
+                    onClick={() => selectSize(value)}
+                  >
+                    {value || 'Без размера'}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Выбор цвета */}
-          {colors.length > 0 && (
+          {variantsForSize.some((value) => value.color) && (
             <div className="option">
-              <span className="option__label">Цвет: {currentVariant?.color}</span>
+              <span className="option__label">Цвет</span>
               <div className="option__values">
-                {colors.map((colorValue) => {
-                  const isSelected = currentVariant?.color === colorValue
-                  return (
-                    <button
-                      key={colorValue}
-                      className={`chip ${isSelected ? 'chip--active' : ''}`}
-                      onClick={() => {
-                        // Находим вариант, соответствующий выбранному цвету и текущему размеру
-                        const found = product.variants.find(
-                          (v) => v.color === colorValue && (!currentVariant?.size || v.size === currentVariant.size)
-                        ) || product.variants.find((v) => v.color === colorValue)
-                        
-                        if (found) setSelectedVariantId(found.id)
-                      }}
-                    >
-                      {colorValue}
-                    </button>
-                  )
-                })}
+                {variantsForSize.map((value) => (
+                  <button
+                    key={value.id}
+                    type="button"
+                    className={`swatch ${variantId === value.id ? 'swatch--active' : ''}`}
+                    style={{ backgroundColor: getColorSwatch(value.color) || 'transparent' }}
+                    aria-label={value.color || 'Без цвета'}
+                    aria-pressed={variantId === value.id}
+                    title={value.color || 'Без цвета'}
+                    onClick={() => {
+                      setImageIndex(null)
+                      setVariantId(value.id)
+                    }}
+                  />
+                ))}
               </div>
             </div>
           )}
 
           <div className="product__buy">
             <QuantityStepper value={quantity} onChange={setQuantity} />
-            <button className="btn btn--primary" onClick={handleAdd}>
+            <button className="btn btn--primary" onClick={handleAdd} disabled={!variant}>
               {added ? 'Добавлено ✓' : 'Добавить в корзину'}
             </button>
           </div>
 
+          {!variant && <p>Нет доступных вариантов</p>}
           <p className="product__description">{product.description}</p>
         </div>
       </div>

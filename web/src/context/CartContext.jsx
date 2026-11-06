@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../api/index.js'
 import { useAuth } from './AuthContext.jsx'
 
+
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
@@ -18,10 +19,16 @@ export function CartProvider({ children }) {
   }, [user])
 
   const update = (request) =>
-    request.then(setItems).catch((err) => alert(err.message))
+    request.then((cart) => {
+      setItems(cart)
+      return true
+    }).catch((err) => {
+      alert(err.message)
+      return false
+    })
 
-  // Передаем variantId, так как бэкенд теперь работает через таблицу product_variants
-  const addItem = (product, { variantId, quantity = 1 } = {}) =>
+  // Один и тот же товар в разных размерах/цветах — разные позиции корзины
+  const addItem = (variantId, quantity = 1) =>
     update(api.addToCart({ variantId, quantity }))
 
   const setQuantity = (id, quantity) => {

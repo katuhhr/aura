@@ -6,15 +6,8 @@ import ProductImage from './ProductImage.jsx'
 export default function ProductCard({ product }) {
   const { addItem } = useCart()
 
-  const handleAdd = () => {
-    // Берем первый доступный вариант из массива variants, приходящего с бэкенда
-    const firstVariant = product.variants?.[0]
-    if (!firstVariant) return
-
-    addItem(product, {
-      variantId: firstVariant.id,
-    })
-  }
+  const variant = product.variants[0]
+  const handleAdd = () => addItem(variant.id)
 
   return (
     <article className="card">
@@ -24,7 +17,7 @@ export default function ProductCard({ product }) {
         <h3 className="card__name">{product.name}</h3>
         <span className="card__price">{formatPrice(product.price)}</span>
       </Link>
-      <button className="btn btn--primary btn--block" onClick={handleAdd}>
+      <button className="btn btn--primary btn--block" onClick={handleAdd} disabled={!variant}>
         Добавить в корзину
       </button>
     </article>
