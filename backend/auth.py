@@ -13,14 +13,12 @@ bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
 def create_token(user_id):
-    """Создаёт случайный токен и запоминает в Redis, какому пользователю он принадлежит."""
     token = secrets.token_hex(32)
     redis_client.setex(f"token:{token}", config.TOKEN_LIFETIME, user_id)
     return token
 
 
 def get_token():
-    """Достаёт токен из заголовка Authorization: Bearer <токен>."""
     header = request.headers.get("Authorization", "")
     if header.startswith("Bearer "):
         return header[len("Bearer "):]
@@ -28,7 +26,6 @@ def get_token():
 
 
 def login_required(view):
-    """Декоратор: пускает к обработчику только пользователей с действующим токеном."""
     @wraps(view)
     def wrapper(*args, **kwargs):
         token = get_token()

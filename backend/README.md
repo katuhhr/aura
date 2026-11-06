@@ -97,3 +97,10 @@ Flask + PostgreSQL + Redis. PostgreSQL хранит пользователей, 
 Каталог и карточка возвращают массив variants с полями id, size и color.
 
 Все запросы к корзине возвращают её целиком: `[{ id, productId, variantId, name, category, price, image, size, color, quantity }]`.
+
+### Загрузка фотографий
+
+POST /api/upload принимает поле image в multipart/form-data и возвращает URL из MinIO.
+POST /api/uploads/product-image также принимает product_id и необязательный color.
+Ссылка добавляется в галерею. Если передан цвет, она становится его основным фото.
+Для привязки передайте заголовок X-Upload-Token со значением UPLOAD_ADMIN_TOKEN из backend/.env.

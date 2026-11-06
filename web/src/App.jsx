@@ -14,7 +14,6 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Каталог и корзина доступны только после входа (ТЗ, п. 3.5.2) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<CatalogPage />} />
