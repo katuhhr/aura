@@ -7,12 +7,11 @@ from psycopg2.extras import RealDictCursor
 
 import config
 
-# Redis хранит токены входа: ключ "token:<токен>" -> id пользователя
+
 redis_client = redis.Redis.from_url(config.REDIS_URL, decode_responses=True)
 
 
 def get_db():
-    """Одно подключение к базе на один запрос."""
     if "db" not in g:
         # RealDictCursor возвращает строки как словари: {"id": 1, "name": ...}
         options = {"host": config.DATABASE_HOST} if config.DATABASE_HOST else {}
@@ -21,7 +20,6 @@ def get_db():
 
 
 def close_db(error=None):
-    """Закрывает подключение после завершения запроса."""
     db = g.pop("db", None)
     if db is not None:
         db.close()
@@ -40,7 +38,6 @@ def fetch_one(sql, params=()):
 
 
 def execute(sql, params=()):
-    """Выполняет UPDATE или DELETE, сохраняет изменения и возвращает число затронутых строк."""
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(sql, params)
@@ -50,7 +47,6 @@ def execute(sql, params=()):
 
 
 def insert(sql, params=()):
-    """Выполняет INSERT ... RETURNING, сохраняет изменения и возвращает новую строку."""
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(sql, params)
